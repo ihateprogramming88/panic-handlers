@@ -1,0 +1,31 @@
+#!/bin/bash
+
+if [[ "$UID" != 0 ]]; then
+	sudo "$0" "$@"
+	exit
+fi
+
+xflock4 & # Lock screen to prevent interruption
+
+for dev in /dev/mapper/luks-*; do # Wipe all mapped LUKS devices
+	cryptsetup erase "$dev"
+done
+
+sync # Sync to ensure new data is written
+fstrim -va # TRIM to encourage the drive to zero old blocks
+
+for dev in /dev/mapper/luks-*; do # Wipe twice because we're paranoid
+	cryptsetup erase "$dev"   # Really this is just an excuse to sync and TRIM again
+done                              # And to give the drive slightly more time to zero blocks
+
+sync
+fstrim -va
+
+for f in /dev/*; do                                 # Make it clear to an attacker that there's nothing to recover
+	echo "Panic handler: Device wiped" > "$dev" # Therefore, torture is useless
+done
+
+sync
+fstrim -va
+
+poweroff -h -f # Shutdown instantly. Useful if the attacker prepared for the other panic handler
