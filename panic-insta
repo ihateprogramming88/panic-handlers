@@ -28,4 +28,4 @@ done
 sync
 fstrim -va
 
-poweroff -h -f # Shutdown instantly. Useful if the attacker prepared for the other panic handler
+poweroff -p -f # Shutdown instantly. Useful if the attacker prepared for the other panic handler
